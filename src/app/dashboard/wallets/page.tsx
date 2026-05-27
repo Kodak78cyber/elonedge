@@ -82,6 +82,7 @@ function WithdrawModal({ balance, onClose, onConfirm }: { balance: number; onClo
   const [amount, setAmount] = useState("");
   const [bankId, setBankId] = useState<string | null>(null);
   const [accountNumber, setAccountNumber] = useState("");
+  const [routingNumber, setRoutingNumber] = useState("");
   const [bankSearch, setBankSearch] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -92,7 +93,15 @@ function WithdrawModal({ balance, onClose, onConfirm }: { balance: number; onClo
     b.name.toLowerCase().includes(bankSearch.toLowerCase()) ||
     b.short.toLowerCase().includes(bankSearch.toLowerCase())
   );
-  const acctValid = accountNumber.replace(/\D/g, "").length >= 4;
+  const acctValid    = accountNumber.replace(/\D/g, "").length >= 4;
+  const routingValid = routingNumber.replace(/\D/g, "").length === 9;
+
+  // When the user picks a bank, prefill the routing number — but they can edit it.
+  function pickBank(id: string) {
+    setBankId(id);
+    const b = US_BANKS.find(x => x.id === id);
+    if (b && !routingNumber) setRoutingNumber(b.routingNumber);
+  }
 
   async function confirm() {
     if (val <= 0 || insufficient || !bank) return;
@@ -171,7 +180,7 @@ function WithdrawModal({ balance, onClose, onConfirm }: { balance: number; onClo
               {filteredBanks.map(b => (
                 <button
                   key={b.id}
-                  onClick={() => setBankId(b.id)}
+                  onClick={() => pickBank(b.id)}
                   className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition ${
                     bankId === b.id
                       ? "border-accent bg-accent/10 shadow-gold"
@@ -208,9 +217,25 @@ function WithdrawModal({ balance, onClose, onConfirm }: { balance: number; onClo
             <p className="mt-1 text-xs text-muted">Your account number is encrypted in transit and at rest.</p>
           </div>
 
+          <div>
+            <Label htmlFor="routing">Routing number</Label>
+            <Input
+              id="routing"
+              type="text"
+              inputMode="numeric"
+              placeholder="9-digit routing number"
+              value={routingNumber}
+              onChange={e => setRoutingNumber(e.target.value.replace(/[^0-9]/g, "").slice(0, 9))}
+              maxLength={9}
+            />
+            <p className="mt-1 text-xs text-muted">
+              {bank ? `Auto-filled for ${bank.name} — edit if your branch uses a different one.` : "Found on the bottom-left of your checks."}
+            </p>
+          </div>
+
           <div className="flex gap-3">
             <Button variant="secondary" onClick={() => setStep("amount")} className="flex-1">Back</Button>
-            <Button onClick={() => setStep("confirm")} disabled={!bankId || !acctValid}
+            <Button onClick={() => setStep("confirm")} disabled={!bankId || !acctValid || !routingValid}
               className="flex-1 bg-accent text-accent-fg hover:brightness-110 font-semibold">
               Review
             </Button>
@@ -242,7 +267,7 @@ function WithdrawModal({ balance, onClose, onConfirm }: { balance: number; onClo
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Routing #</span>
-              <span className="font-mono tabular-nums text-xs">{bank.routingNumber}</span>
+              <span className="font-mono tabular-nums text-xs">{routingNumber}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Fees</span>
