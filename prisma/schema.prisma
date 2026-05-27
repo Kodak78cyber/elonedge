@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  password     String
+  country      String
+  balance      Float         @default(10000)
+  role         Role          @default(USER)
+  joinedAt     DateTime      @default(now())
+  holdings     Holding[]
+  transactions Transaction[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Asset {
+  id            String   @id              // e.g. "tsla", "spacex"
+  symbol        String
+  name          String
+  category      String
+  basePrice     Float
+  changePct24h  Float
+  annualReturn  Float
+  marketCap     String
+  color         String
+  updatedAt     DateTime @updatedAt
+}
+
+model SiteConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Holding {
+  id            String @id @default(cuid())
+  userId        String
+  assetId       String
+  shares        Float
+  avgBuyPrice   Float
+  totalInvested Float
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assetId])
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  userId        String
+  type          TxType
+  assetId       String?
+  assetName     String?
+  assetSymbol   String?
+  shares        Float?
+  pricePerShare Float?
+  amount        Float
+  date          DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TxType {
+  BUY
+  SELL
+  DEPOSIT
+  WITHDRAW
+}
