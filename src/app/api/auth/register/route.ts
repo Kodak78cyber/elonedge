@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createSession, SESSION_COOKIE } from "@/lib/session";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const { name, email, password, country } = await req.json();
@@ -23,6 +24,9 @@ export async function POST(req: NextRequest) {
       transactions: { create: [{ type: "DEPOSIT", amount: 10_000 }] },
     },
   });
+
+  // Fire-and-forget welcome email — don't block the response on email delivery.
+  sendWelcomeEmail({ to: user.email, name: user.name }).catch(() => {});
 
   const token = await createSession(user.id);
   const res = NextResponse.json({ ok: true, token });
