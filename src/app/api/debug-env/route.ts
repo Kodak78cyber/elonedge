@@ -16,6 +16,8 @@ export async function GET() {
     "ADMIN_PASSWORD",
     "NEXT_PUBLIC_APP_NAME",
     "NEXT_PUBLIC_APP_URL",
+    "RESEND_API_KEY",
+    "EMAIL_FROM",
     "NODE_ENV",
     "VERCEL",
     "VERCEL_ENV",
